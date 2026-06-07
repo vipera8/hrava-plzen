@@ -197,7 +197,7 @@ window.verifyAccessCode = verifyAccessCode;
 function renderAdminEntry(){
  const backAction = getState() ? 'returnToGame()' : 'backToWebsite()';
  const backText = getState() ? 'Zpět do hry' : 'Zpět na web';
- app.innerHTML = `<main class="phone"><section class="content"><div class="hero hero-intro"><h1>Admin / test</h1><p>Přístup do administrace a testovacího režimu.</p></div><div class="card"><input id="adminPass" type="password" placeholder="Heslo" autocomplete="current-password"><button id="adminLoginBtn" class="btn" style="margin-top:10px" type="button">Vstoupit</button><p class="small muted">Admin se nezobrazuje v hráčském menu. Přístup je pouze přes adresu /admin a heslo.</p></div><button class="btn ghost" onclick="${backAction}">${backText}</button></section></main>`;
+ app.innerHTML = `<main class="phone"><section class="content"><div class="hero hero-intro"><h1>Admin / test</h1><p>Přístup do administrace a testovacího režimu.</p></div><div class="card"><input id="adminPass" type="password" placeholder="Heslo" autocomplete="current-password"><button id="adminLoginBtn" class="btn" style="margin-top:10px" type="button" onclick="adminLogin()">Vstoupit</button><p class="small muted">Admin se nezobrazuje v hráčském menu. Přístup je pouze přes adresu /admin a heslo.</p></div><button class="btn ghost" onclick="${backAction}">${backText}</button></section></main>`;
  setTimeout(()=>{
   const input=$('#adminPass');
   const btn=$('#adminLoginBtn');
@@ -209,7 +209,7 @@ function renderAdminEntry(){
  },50);
 }
 
-function renderStart(){ app.innerHTML = `<main class="phone"><section class="content"><div class="hero hero-intro"><h1>Grollova zlatá stopa</h1><p class="hero-subtitle">Venkovní úniková hra v historickém srdci Plzně.</p><p class="lead">Vydejte se po stopách muže, který změnil chuť Plzně. Čeká vás 13 zastávek, historické město a zamčená tajemství. Dívejte se pozorně, poslouchejte a použijte vše, co po cestě získáte.</p></div><div class="card"><label>Název týmu</label><input id="teamName" type="text" placeholder="Např. Sládkové z Plzně" autocomplete="off"></div><div class="accordion"><button class="acc-head" onclick="toggleAcc(this)">Pravidla hry <span>⌄</span></button><div class="acc-body">${rulesText()}</div></div><div class="card"><label class="check"><input id="agree" type="checkbox"> <span>Potvrzuji, že se účastním hry dobrovolně a na vlastní odpovědnost. Budu dodržovat pravidla hry, pravidla silničního provozu a nebudu vstupovat do nebezpečných ani zakázaných míst.</span></label></div><div class="card location-card"><h3>Použití polohy</h3><p class="small">Poloha nám pomůže navést vás k další zastávce, ověřit, že jste na správném místě, a v případě SOS poslat správci vaši aktuální pozici.</p><button class="btn" onclick="requestPosBeforeStart()">Povolit polohu</button><button class="text-link location-skip" onclick="continueWithoutLocation()">Pokračovat bez polohy</button></div><div class="card"><h3>Připravit hru offline</h3><p class="small">Doporučujeme stáhnout obsah předem na Wi‑Fi. Prohlížeč si uloží základ aplikace a načtená média.</p><button class="btn secondary" onclick="cacheOffline()">Stáhnout obsah hry</button></div><button class="btn" onclick="startGame()">Načepovat první stopu</button></section></main>`; }
+function renderStart(){ app.innerHTML = `<main class="phone"><section class="content"><div class="hero hero-intro"><h1>Grollova zlatá stopa</h1><p class="hero-subtitle">Venkovní úniková hra v historickém srdci Plzně.</p><p class="lead">Vydejte se po stopách muže, který změnil chuť Plzně. Čeká vás 13 zastávek, historické město a zamčená tajemství. Dívejte se pozorně, poslouchejte a použijte vše, co po cestě získáte.</p></div><div class="card"><label>Název týmu</label><input id="teamName" type="text" placeholder="Např. Sládkové z Plzně" autocomplete="off"></div><div class="accordion"><button class="acc-head" onclick="toggleAcc(this)">Pravidla hry <span>⌄</span></button><div class="acc-body">${rulesText()}</div></div><div class="card"><label class="check"><input id="agree" type="checkbox"> <span>Potvrzuji, že se účastním hry dobrovolně a na vlastní odpovědnost. Budu dodržovat pravidla hry, pravidla silničního provozu a nebudu vstupovat do nebezpečných ani zakázaných míst.</span></label></div><div class="card location-card"><h3>Použití polohy</h3><p class="small">Poloha nám pomůže navést vás k další zastávce, ověřit, že jste na správném místě, a v případě SOS poslat správci vaši aktuální pozici.</p><button class="btn" onclick="requestPosBeforeStart()">Povolit polohu</button><button class="text-link location-skip" onclick="continueWithoutLocation()">Pokračovat bez polohy</button></div><button class="btn" onclick="startGame()">Načepovat první stopu</button></section></main>`; }
 function rulesText(){return `Hra vás provede 13 zastávkami v centru Plzně. Na každé zastávce sledujte pokyny v aplikaci, používejte předměty, které získáte po cestě, a pozorně si všímejte okolí.
 
 Hra probíhá ve veřejném městském prostoru. Hrajte bezpečně, dodržujte pravidla silničního provozu a nevstupujte do silnice, na koleje, do uzavřených prostor ani nikam, kam není běžně povolený vstup. Všechny úkoly jsou řešitelné z veřejně přístupných míst.
@@ -548,8 +548,8 @@ const CERT_DEBUG = false;
 const CERT_TEMPLATE_SIZE = { width: 941, height: 1672 };
 const CERT_FIELDS = {
   team:      { x: 285, y: 632,  w: 360, h: 62,  font: 38, align: 'center' },
-  time:      { x: 478, y: 1018, w: 205, h: 48,  font: 24, align: 'left' },
-  hints:     { x: 550, y: 1108, w:  95, h: 48,  font: 24, align: 'left' },
+  time:      { x: 449, y: 1036, w: 205, h: 48,  font: 24, align: 'left' },
+  hints:     { x: 579, y: 1114, w:  95, h: 48,  font: 24, align: 'left' },
   solutions: { x: 550, y: 1196, w:  95, h: 48,  font: 24, align: 'left' }
 };
 
@@ -752,7 +752,8 @@ function adminLogHtml(rows){
 }
 
 function adminLogin(){
- if($('#adminPass').value!==DATA.adminPassword) return toast('Špatné heslo.');
+ const pass = ($('#adminPass')?.value || '').trim();
+ if(pass!==String(DATA.adminPassword || '').trim()) return toast('Špatné heslo.');
  const s=getState();
  const rows=adminLog();
  modal(`<h2>Admin panel</h2>
@@ -870,11 +871,10 @@ function openMenu(){
  const s=getState();
  const stationLine = s && !s.finished ? `<p class="small muted">Aktuální zastávka: ${s.currentStation}/${DATA.stations.length}</p>` : '';
  modal(`<h2>Menu</h2>${stationLine}<div class="menu-list">
-  <button class="btn" onclick="closeModal(); returnToGame()">Zpět do hry</button>
-  <button class="btn danger" onclick="closeModal(); openSOS()">SOS</button>
   <button class="btn secondary" onclick="closeModal(); openRulesModal()">Pravidla hry</button>
-  <button class="btn secondary" onclick="closeModal(); openLeaderboard()">Žebříček</button>
+  <button class="btn danger" onclick="closeModal(); openSOS()">SOS pomoc</button>
   <button class="btn ghost" onclick="closeModal(); backToWebsite()">Zpět na web</button>
+  <button class="btn" onclick="closeModal(); returnToGame()">Zpět do hry</button>
  </div>`, false);
 }
 function modal(html, showClose=true){ closeModal(); const d=document.createElement('div'); d.className='modal-back'; d.innerHTML=`<div class="modal">${html}${showClose?`<button class="btn ghost" style="margin-top:14px" onclick="closeModal()">Zpět do hry</button>`:''}</div>`; d.addEventListener('click',e=>{ if(e.target===d && showClose) closeModal(); }); document.body.appendChild(d); }
