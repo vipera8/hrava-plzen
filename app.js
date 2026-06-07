@@ -213,7 +213,7 @@ function renderAdminEntry(){
  },50);
 }
 
-function renderStart(){ app.innerHTML = `<main class="phone"><section class="content"><div class="hero hero-intro"><h1>Grollova zlatá stopa</h1><p class="hero-subtitle">Venkovní úniková hra v historickém srdci Plzně.</p><p class="lead">Vydejte se po stopách muže, který změnil chuť Plzně. Čeká vás 13 zastávek, historické město a zamčená tajemství. Dívejte se pozorně, poslouchejte a použijte vše, co po cestě získáte.</p></div><div class="card"><label>Název týmu</label><input id="teamName" type="text" placeholder="Např. Sládkové z Plzně" autocomplete="off"></div><div class="accordion"><button class="acc-head" onclick="toggleAcc(this)">Pravidla hry <span>⌄</span></button><div class="acc-body">${rulesText()}</div></div><div class="card"><label class="check"><input id="agree" type="checkbox"> <span>Potvrzuji, že se účastním hry dobrovolně a na vlastní odpovědnost. Budu dodržovat pravidla hry, pravidla silničního provozu a nebudu vstupovat do nebezpečných ani zakázaných míst.</span></label></div><div class="card location-card"><h3>Použití polohy</h3><p class="small">Poloha nám pomůže navést vás k další zastávce, ověřit, že jste na správném místě, a v případě SOS poslat správci vaši aktuální pozici.</p><button class="btn" onclick="requestPosBeforeStart()">Povolit polohu</button><button class="text-link location-skip" onclick="continueWithoutLocation()">Pokračovat bez polohy</button></div><button class="btn" onclick="startGame()">Načepovat první stopu</button></section></main>`; }
+function renderStart(){ app.innerHTML = `<main class="phone"><section class="content"><figure class="start-visual"><img src="assets/images/groll_uvod.jpg" alt="Grollova zlatá stopa" loading="eager"></figure><div class="hero hero-intro"><h1>Grollova zlatá stopa</h1><p class="hero-subtitle">Venkovní úniková hra v historickém srdci Plzně.</p><p class="lead">Vydejte se po stopách muže, který změnil chuť Plzně. Čeká vás 13 zastávek, historické město a zamčená tajemství. Dívejte se pozorně, poslouchejte a použijte vše, co po cestě získáte.</p></div><div class="card"><label>Název týmu</label><input id="teamName" type="text" placeholder="Např. Sládkové z Plzně" autocomplete="off"></div><div class="accordion"><button class="acc-head" onclick="toggleAcc(this)">Pravidla hry <span>⌄</span></button><div class="acc-body">${rulesText()}</div></div><div class="card"><label class="check"><input id="agree" type="checkbox"> <span>Potvrzuji, že se účastním hry dobrovolně a na vlastní odpovědnost. Budu dodržovat pravidla hry, pravidla silničního provozu a nebudu vstupovat do nebezpečných ani zakázaných míst.</span></label></div><div class="accordion location-accordion open"><button class="acc-head" onclick="toggleAcc(this)">Použití polohy <span>⌄</span></button><div class="acc-body location-body"><p>Poloha nám pomůže navést vás k další zastávce, ověřit, že jste na správném místě, a v případě SOS poslat správci vaši aktuální pozici.</p><button class="btn" onclick="requestPosBeforeStart()">Povolit polohu</button><button class="text-link location-skip" onclick="continueWithoutLocation()">Pokračovat bez polohy</button></div></div><button class="btn" onclick="startGame()">Načepovat první stopu</button></section></main>`; }
 function rulesText(){return `Hra vás provede 13 zastávkami v centru Plzně. Na každé zastávce sledujte pokyny v aplikaci, používejte předměty, které získáte po cestě, a pozorně si všímejte okolí.
 
 Hra probíhá ve veřejném městském prostoru. Hrajte bezpečně, dodržujte pravidla silničního provozu a nevstupujte do silnice, na koleje, do uzavřených prostor ani nikam, kam není běžně povolený vstup. Všechny úkoly jsou řešitelné z veřejně přístupných míst.
@@ -539,7 +539,7 @@ function renderFinish(){
     </section>
   </div>
   <div class="grid cert-actions no-print" style="margin-top:14px">
-    <button class="btn" onclick="printCertificate()">Stáhnout / vytisknout certifikát</button>
+    <button class="btn" onclick="downloadCertificate()">Stáhnout certifikát</button>
     <button class="btn secondary" onclick="shareResult()">Sdílet výsledek</button>
     <button class="btn ghost" onclick="openLeaderboard()">Žebříček</button>
   </div>`);
@@ -552,7 +552,7 @@ const CERT_DEBUG = false;
 const CERT_TEMPLATE_SIZE = { width: 941, height: 1672 };
 const CERT_FIELDS = {
   team:      { x: 285, y: 643,  w: 360, h: 62,  font: 38, align: 'center' },
-  time:      { x: 449, y: 1019, w: 205, h: 48,  font: 24, align: 'left' },
+  time:      { x: 449, y: 1025, w: 205, h: 48,  font: 24, align: 'left' },
   hints:     { x: 568, y: 1114, w:  95, h: 48,  font: 24, align: 'left' },
   solutions: { x: 550, y: 1196, w:  95, h: 48,  font: 24, align: 'left' }
 };
@@ -851,22 +851,133 @@ async function shareResult(){
  if(!s || !s.finished){ toast('Výsledek zatím není k dispozici.'); return; }
  const total=(s.finishTime||now())-s.startTime;
  const text=`Tým ${s.team} dokončil Grollovu zlatou stopu za ${fmtTime(total)} a získal titul ${titleFor(total)}.`;
- if(navigator.share){
-  try{ await navigator.share({title:'Grollova zlatá stopa', text}); return; }catch(e){}
- }
- try{
-  await navigator.clipboard.writeText(text);
-  toast('Výsledek byl zkopírován do schránky.');
- }catch(e){
-  modal(`<h2>Sdílet výsledek</h2><p>${escapeHtml(text)}</p>`);
- }
+ modal(`<h2>Sdílet výsledek</h2><p>${escapeHtml(text)}</p><div class="share-grid">
+  <button class="share-btn native" onclick="shareCertificateNative()">Sdílet v telefonu</button>
+  <a class="share-btn facebook" href="${socialUrl('facebook', text)}" target="_blank" rel="noopener">Facebook</a>
+  <a class="share-btn whatsapp" href="${socialUrl('whatsapp', text)}" target="_blank" rel="noopener">WhatsApp</a>
+  <a class="share-btn messenger" href="${socialUrl('messenger', text)}" target="_blank" rel="noopener">Messenger</a>
+  <button class="share-btn instagram" onclick="shareInstagramHint()">Instagram</button>
+ </div><p class="small muted share-note">Nejlepší volba je „Sdílet v telefonu“. Mobil pak nabídne dostupné aplikace, například Facebook, Instagram nebo zprávy. Přiloží se i obrázek certifikátu, pokud to telefon podporuje.</p><button class="btn ghost" style="margin-top:14px" onclick="closeModal()">Zpět do hry</button>`, false);
 }
 
 function exportData(){ const blob=new Blob([JSON.stringify({state:getState(),log:adminLog(),leaderboard:JSON.parse(localStorage.getItem('grollLeaderboard.v1')||'[]')},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='grollova-cesta-export.json'; a.click(); }
+function certificateData(){
+ const s=getState();
+ if(!s || !s.finished) return null;
+ const total=(s.finishTime||now())-s.startTime;
+ return {
+  team:s.team || 'Tým',
+  time:fmtTime(total),
+  hints:Object.values(s.hints || {}).reduce((sum,n)=>sum+(Number(n)||0),0),
+  solutions:Object.values(s.solutions || {}).filter(Boolean).length,
+  title:titleFor(total),
+  imageSrc:'assets/images/certifikat-bez-titulu.jpg'
+ };
+}
+function loadImage(src){
+ return new Promise((resolve,reject)=>{
+  const img=new Image();
+  img.onload=()=>resolve(img);
+  img.onerror=reject;
+  img.src=src;
+ });
+}
+function certFileName(){
+ const s=getState();
+ const team=(s?.team || 'tym').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'tym';
+ return `grollova-zlata-stopa-certifikat-${team}.png`;
+}
+function fitCanvasFont(ctx, weight, startSize, minSize, text, maxWidth){
+ let size=startSize;
+ while(size>=minSize){
+  ctx.font=`${weight} ${size}px Georgia, "Times New Roman", serif`;
+  if(ctx.measureText(String(text || '')).width <= maxWidth) return size;
+  size-=2;
+ }
+ return minSize;
+}
+async function createCertificateBlob(){
+ const data=certificateData();
+ if(!data) throw new Error('Certificate data missing');
+ const canvas=document.createElement('canvas');
+ canvas.width=CERT_TEMPLATE_SIZE.width;
+ canvas.height=CERT_TEMPLATE_SIZE.height;
+ const ctx=canvas.getContext('2d');
+ const bg=await loadImage(data.imageSrc);
+ ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+ ctx.fillStyle='#2f1a0d';
+ ctx.textBaseline='middle';
+ const drawField=(name, text)=>{
+  const f=CERT_FIELDS[name];
+  const centerY=f.y + f.h / 2;
+  const weight=700;
+  const size=name==='team' ? fitCanvasFont(ctx, weight, f.font, 22, text, f.w) : f.font;
+  ctx.font=`${weight} ${size}px Georgia, "Times New Roman", serif`;
+  ctx.textAlign=f.align || 'left';
+  const x=f.align==='center' ? f.x + f.w / 2 : f.x;
+  ctx.fillText(String(text ?? ''), x, centerY);
+ };
+ drawField('team', data.team);
+ drawField('time', data.time);
+ drawField('hints', data.hints);
+ drawField('solutions', data.solutions);
+ return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob ? resolve(blob) : reject(new Error('Canvas export failed')), 'image/png'));
+}
+async function downloadCertificate(){
+ try{
+  const blob=await createCertificateBlob();
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=certFileName();
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('Certifikát se stáhl jako barevný obrázek.');
+ }catch(e){
+  console.error(e);
+  toast('Certifikát se nepodařilo stáhnout.');
+ }
+}
+function socialUrl(type, text){
+ const pageUrl='https://hrava-plzen.cz';
+ const url=encodeURIComponent(pageUrl);
+ const msg=encodeURIComponent(`${text}\n${pageUrl}`);
+ if(type==='facebook') return `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${msg}`;
+ if(type==='whatsapp') return `https://wa.me/?text=${msg}`;
+ if(type==='messenger') return `fb-messenger://share/?link=${url}`;
+ return '#';
+}
+async function shareCertificateNative(){
+ const s=getState();
+ if(!s || !s.finished){ toast('Výsledek zatím není k dispozici.'); return; }
+ const total=(s.finishTime||now())-s.startTime;
+ const text=`Tým ${s.team} dokončil Grollovu zlatou stopu za ${fmtTime(total)} a získal titul ${titleFor(total)}.`;
+ try{
+  const blob=await createCertificateBlob();
+  const file=new File([blob], certFileName(), {type:'image/png'});
+  if(navigator.canShare?.({files:[file]}) && navigator.share){
+   await navigator.share({title:'Grollova zlatá stopa', text, files:[file]});
+   return;
+  }
+  if(navigator.share){
+   await navigator.share({title:'Grollova zlatá stopa', text, url:'https://hrava-plzen.cz'});
+   return;
+  }
+  await navigator.clipboard.writeText(text);
+  toast('Text výsledku byl zkopírován do schránky.');
+ }catch(e){
+  console.error(e);
+  toast('Sdílení se nepodařilo. Zkuste stáhnout certifikát.');
+ }
+}
+async function shareInstagramHint(){
+ await downloadCertificate();
+ toast('Pro Instagram nahrajte stažený certifikát jako příspěvek nebo příběh.');
+}
 function printCertificate(){
- closeModal();
- document.body.classList.add('printing-certificate');
- setTimeout(()=>window.print(), 80);
+ downloadCertificate();
 }
 window.addEventListener('afterprint',()=>document.body.classList.remove('printing-certificate'));
 function openSOS(){

@@ -16,15 +16,19 @@
 @media(max-width:420px){.station-title-text{font-size:17px}.beer-small{width:34px;height:43px}.station-head.compact{padding:9px 9px 9px 11px}.icon-btn.danger{padding:8px 9px}.beer-large{width:min(46vw,150px)}}
 
 /* Úvodní obrazovka – finální název hry */
+.start-visual{margin:0 0 12px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.32);background:#2b1708;box-shadow:0 10px 20px rgba(72,40,13,.14)}
+.start-visual img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;object-position:center center}
 .hero-intro{text-align:left;padding:28px 19px 22px}
 .hero-intro h1{font-size:38px;letter-spacing:.01em;margin-bottom:8px}
 .hero-subtitle{font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:#5b3512;margin:0 0 16px;line-height:1.35}
 .hero-intro .lead{margin:0;max-width:34em}
-@media(max-width:420px){.hero-intro h1{font-size:32px}.hero-subtitle{font-size:16px}.hero-intro{padding:24px 16px 20px}}
+@media(max-width:420px){.hero-intro h1{font-size:32px}.hero-subtitle{font-size:16px}.hero-intro{padding:24px 16px 20px}.start-visual{margin-bottom:10px;border-radius:16px}}
 
 /* Úvodní obrazovka – Použití polohy */
-.location-card .small{font-size:14px;line-height:1.5;margin:0 0 13px;color:#5e3e1d}
-.location-card .btn{margin-top:4px}
+.location-accordion{background:rgba(255,250,238,.72)}
+.location-body{white-space:normal}
+.location-body p{font-size:15px;line-height:1.35;margin:0 0 13px;color:#2b180a}
+.location-body .btn{margin-top:4px}
 .text-link{appearance:none;border:0;background:transparent;color:#6f3d12;text-decoration:underline;text-underline-offset:3px;box-shadow:none;width:auto;display:block;margin:12px auto 0;padding:4px 8px;font-weight:700;font-size:13px;cursor:pointer}
 .text-link:active{transform:translateY(1px)}
 .location-skip{opacity:.78}
@@ -1410,4 +1414,55 @@
     height:100%!important;
     object-fit:contain!important;
   }
+}
+
+/* v89 share sheet: social buttons for result sharing */
+.share-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.share-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:48px;
+  border:0;
+  border-radius:15px;
+  padding:12px 10px;
+  text-decoration:none;
+  font-weight:900;
+  color:#fff;
+  box-shadow:0 8px 16px rgba(45,24,8,.16);
+  cursor:pointer;
+}
+.share-btn::before{
+  display:grid;
+  place-items:center;
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  background:rgba(255,255,255,.22);
+  font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  text-transform:uppercase;
+}
+.share-btn.native{grid-column:1/-1;background:#6f3d12}
+.share-btn.native::before{content:'>'}
+.share-btn.facebook{background:#1877f2}
+.share-btn.facebook::before{content:'f';font-size:17px}
+.share-btn.whatsapp{background:#128c7e}
+.share-btn.whatsapp::before{content:'wa';font-size:10px}
+.share-btn.messenger{background:#6b4dff}
+.share-btn.messenger::before{content:'m'}
+.share-btn.instagram{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
+.share-btn.instagram::before{content:'ig';font-size:10px}
+.share-note{
+  margin:12px 0 0;
+  line-height:1.45;
+}
+@media(max-width:420px){
+  .share-grid{grid-template-columns:1fr}
+  .share-btn.native{grid-column:auto}
 }
