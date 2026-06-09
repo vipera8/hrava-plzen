@@ -130,22 +130,25 @@ function stateFromOnlineRow(row){
  };
 }
 async function restoreOnlineStateByCode(code){
- const url=monitorUrl('restore', {accessCode:normalize(code)});
- if(!url) return null;
+ window._lastRestoreError='';
+ if(!monitorEndpoint()) return null;
  try{
-  const data=await loadJsonp(url);
-  const restored=stateFromOnlineRow(data?.team);
-  if(restored) return restored;
   const adminPassword=String(window.GAME_DATA?.adminPassword || '').trim();
-  if(!adminPassword) return null;
-  const adminData=await loadJsonp(monitorUrl('admin', {adminPassword, _: Date.now()}));
-  const rows=Array.isArray(adminData?.teams) ? adminData.teams : [];
-  const match=rows
-   .filter(row=>normalize(row.accessCode || '') === normalize(code))
-   .sort((a,b)=>String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0];
-  return stateFromOnlineRow(match);
+  if(adminPassword){
+   const adminData=await loadJsonp(monitorUrl('admin', {adminPassword, _: Date.now()}));
+   const rows=Array.isArray(adminData?.teams) ? adminData.teams : [];
+   const match=rows
+    .filter(row=>normalize(row.accessCode || '') === normalize(code))
+    .sort((a,b)=>String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0];
+   const fromAdmin=stateFromOnlineRow(match);
+   if(fromAdmin) return fromAdmin;
+  }
+  const data=await loadJsonp(monitorUrl('restore', {accessCode:normalize(code), _: Date.now()}));
+  const restored=stateFromOnlineRow(data?.team);
+  return restored;
  }catch(e){
   console.warn('Online restore failed', e);
+  window._lastRestoreError=e?.message || 'Online průběh se nepodařilo načíst.';
   return null;
  }
 }
@@ -362,9 +365,14 @@ async function verifyAccessCode(){
  localStorage.setItem(ACCESS_CODE_KEY, code);
  grantGameAccess();
  if(!getState()){
-  toast('Kontroluji uložený průběh hry...');
+ toast('Kontroluji uložený průběh hry...');
   const restored=await restoreOnlineStateByCode(code);
   if(restored) saveState(restored);
+  else if(window._lastRestoreError){
+   toast('Rozehranou hru se nepodařilo načíst. Zkuste obnovit stránku.');
+   if(err){ err.textContent='Rozehranou hru se nepodařilo načíst z online úložiště. Zkuste stránku obnovit nebo ověřte připojení k internetu.'; err.style.display='block'; }
+   return false;
+  }
  }
  setRoute('/hra/app');
  renderGameApp();
