@@ -1390,8 +1390,9 @@ function openMenu(){
  const s=getState();
  const stationLine = s && !s.finished ? `<p class="small muted">Aktuální zastávka: ${s.currentStation}/${DATA.stations.length}</p>` : '';
  modal(`<h2>Menu</h2>${stationLine}<div class="menu-list">
-  <button class="btn secondary" onclick="closeModal(); openRulesModal()">Pravidla hry</button>
+ <button class="btn secondary" onclick="closeModal(); openRulesModal()">Pravidla hry</button>
   <button class="btn danger" onclick="closeModal(); openSOS()">SOS pomoc</button>
+  <button class="btn secondary" onclick="closeModal(); openLeaderboard()">Žebříček</button>
   <button class="btn ghost" onclick="closeModal(); backToWebsite()">Zpět na web</button>
   <button class="btn" onclick="closeModal(); returnToGame()">Zpět do hry</button>
  </div>`, false);
