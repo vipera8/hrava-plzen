@@ -482,7 +482,7 @@ function renderHintContent(hint){
  if(hint.image){
    const imageClass = hint.image.includes('07_namesti_republiky_symboly') ? 'hint-image hint-image-75 hint-image-transparent-bg' : (hint.image.includes('09_vodarenska_vez_napoveda_3_symbol') ? 'hint-image hint-image-small-symbol' : 'hint-image');
    const wrapClass = hint.image.includes('07_namesti_republiky_symboly') ? 'hint-image-wrap hint-image-wrap-transparent' : (hint.image.includes('09_vodarenska_vez_napoveda_3_symbol') ? 'hint-image-wrap hint-image-wrap-small-symbol' : 'hint-image-wrap');
-   image = `<figure class="${wrapClass}"><img class="${imageClass}" src="assets/images/${encodeURI(hint.image)}" alt="Nápověda" loading="lazy" onerror="this.closest('.hint-image-wrap').style.display='none'"></figure>`;
+   image = `<figure class="${wrapClass}"><img class="${imageClass}" src="${secretImageSrc(hint)}" alt="Nápověda" loading="lazy" onerror="this.closest('.hint-image-wrap').style.display='none'"></figure>`;
  }
  const after = hint.textAfter ? `<div>${ptxt(hint.textAfter)}</div>` : '';
  return `${before}${image}${after}`;
@@ -492,10 +492,14 @@ function renderSolutionContent(solution){
  if(!solution || typeof solution !== 'object') return '';
  const before = solution.textBefore ? `<div>${ptxt(solution.textBefore)}</div>` : '';
  const image = solution.image
-  ? `<figure class="hint-image-wrap solution-image-wrap"><img class="hint-image solution-image" src="assets/images/${encodeURI(solution.image)}" alt="${escapeAttr(solution.alt || 'Řešení')}" loading="lazy" onerror="this.closest('.hint-image-wrap').style.display='none'"></figure>`
+  ? `<figure class="hint-image-wrap solution-image-wrap"><img class="hint-image solution-image" src="${secretImageSrc(solution)}" alt="${escapeAttr(solution.alt || 'Řešení')}" loading="lazy" onerror="this.closest('.hint-image-wrap').style.display='none'"></figure>`
   : '';
  const after = solution.textAfter ? `<div>${ptxt(solution.textAfter)}</div>` : '';
  return `${before}${image}${after}`;
+}
+function secretImageSrc(item){
+ if(item?.imageDataUrl) return item.imageDataUrl;
+ return `assets/images/${encodeURI(item?.image || '')}`;
 }
 
 function renderHints(st, hintState){

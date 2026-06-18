@@ -2,12 +2,14 @@
 const LEAD_NOTIFICATION_EMAIL = 'hravaplzen@gmail.com';
 const SHEETS = {
   leaderboard: 'Leaderboard', teams: 'Teams', events: 'Events',
-  accessCodes: 'AccessCodes', leads: 'Leads', secrets: 'StationSecrets'
+  accessCodes: 'AccessCodes', leads: 'Leads', secrets: 'StationSecrets',
+  secretImages: 'SecretImages'
 };
 const HEADERS = {
   accessCodes: ['accessCode','customerName','email','phone','orderType','status','createdAt','assignedAt','notes','teamId','teamName','startedAt','lastUsedAt'],
   leads: ['time','type','name','email','phone','payload','status'],
   secrets: ['stationId','title','unlockCode','hintsJson','solutionJson'],
+  secretImages: ['fileName','driveFileId','mimeType','notes'],
   teams: ['id','team','accessCode','currentStation','stationTitle','startTime','updatedAt','finished','finishTime','hints','solutions','wrong','wrongTotal','completed','lastPos'],
   events: ['time','teamId','team','accessCode','type','eventName','station','stationTitle','hint','value','detail'],
   leaderboard: ['id','team','total','hints','solutions','title','date']
@@ -38,8 +40,33 @@ function adminPassword_(){ return String(PropertiesService.getScriptProperties()
 function requireAdmin_(e,fn){ if(!adminPassword_() || String(e.parameter.adminPassword||'')!==adminPassword_()) return json_({ok:false,error:'unauthorized'},e); return fn(); }
 function normalize_(v){ return String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,''); }
 function parseJson_(v,f){ try{return JSON.parse(String(v||''));}catch(e){return f;} }
+function mediaTypeFromName_(name){ const ext=String(name||'').split('.').pop().toLowerCase(); if(ext==='jpg'||ext==='jpeg') return 'image/jpeg'; if(ext==='png') return 'image/png'; if(ext==='webp') return 'image/webp'; return 'application/octet-stream'; }
 
 function stationSecret_(id){ return rows_(SHEETS.secrets).find(r=>Number(r.stationId)===Number(id)); }
+function secretImage_(name){ const target=String(name||'').trim(); if(!target) return null; return rows_(SHEETS.secretImages).find(r=>String(r.fileName||'').trim()===target) || null; }
+function secretImageDataUrl_(name){
+  const rec=secretImage_(name);
+  const fileId=String(rec && rec.driveFileId || '').trim();
+  if(!fileId) return '';
+  try{
+    const blob=DriveApp.getFileById(fileId).getBlob();
+    const mime=String(rec.mimeType||'').trim() || blob.getContentType() || mediaTypeFromName_(name);
+    return 'data:'+mime+';base64,'+Utilities.base64Encode(blob.getBytes());
+  }catch(err){
+    return '';
+  }
+}
+function withSecretImages_(value){
+  if(!value || typeof value!=='object') return value;
+  if(Array.isArray(value)) return value.map(withSecretImages_);
+  const out={};
+  Object.keys(value).forEach(k=>out[k]=value[k]);
+  if(out.image && !out.imageDataUrl){
+    const dataUrl=secretImageDataUrl_(out.image);
+    if(dataUrl) out.imageDataUrl=dataUrl;
+  }
+  return out;
+}
 function accessCodeRecord_(code){ const target=normalize_(code); return rows_(SHEETS.accessCodes).find(r=>normalize_(r.accessCode)===target) || null; }
 function touchAccessCode_(code, values){ const sh=getSheet_(SHEETS.accessCodes,HEADERS.accessCodes); const vals=sh.getDataRange().getValues(); const headers=vals[0].map(String); const target=normalize_(code); for(let r=1;r<vals.length;r++){ if(normalize_(vals[r][0])===target){ Object.keys(values).forEach(k=>{ const c=headers.indexOf(k); if(c>=0) sh.getRange(r+1,c+1).setValue(values[k]); }); return; } } }
 
@@ -64,7 +91,7 @@ function hint_(e){
   const accessCode=normalize_(e.parameter.accessCode||'');
   if(!accessCodeRecord_(accessCode)) return json_({ok:false,error:'invalid_access_code'},e);
   const station=Number(e.parameter.station||e.parameter.stationId||0), num=Math.max(1,Number(e.parameter.num||1));
-  const secret=stationSecret_(station), hints=parseJson_(secret && secret.hintsJson,[]);
+  const secret=stationSecret_(station), hints=withSecretImages_(parseJson_(secret && secret.hintsJson,[]));
   if(!hints[num-1]) return json_({ok:false,error:'missing_hint'},e);
   return json_({ok:true,station,num,hint:hints[num-1],hintCount:hints.length},e);
 }
@@ -73,7 +100,7 @@ function solution_(e){
   if(!accessCodeRecord_(accessCode)) return json_({ok:false,error:'invalid_access_code'},e);
   const station=Number(e.parameter.station||e.parameter.stationId||0), secret=stationSecret_(station);
   if(!secret) return json_({ok:false,error:'invalid_station'},e);
-  return json_({ok:true,station,solution:parseJson_(secret.solutionJson,'')},e);
+  return json_({ok:true,station,solution:withSecretImages_(parseJson_(secret.solutionJson,''))},e);
 }
 function saveLead_(e){
   const sh=getSheet_(SHEETS.leads,HEADERS.leads); const payloadText=String(e.parameter.payload||'{}'); const p=parseJson_(payloadText,{});
