@@ -874,15 +874,22 @@ function renderFinish(){
  const total=(s.finishTime||now())-s.startTime;
  const hintCount = Object.values(s.hints || {}).reduce((sum,n)=>sum+(Number(n)||0),0);
  const solutionCount = Object.values(s.solutions || {}).filter(Boolean).length;
- const teamName = s.team || '—';
+ app.innerHTML = shell(finishCertificateHtml({
+  teamName:s.team || '—',
+  timeText:fmtTime(total),
+  hintCount,
+  solutionCount
+ }));
+ addLeaderboardOnce();
+}
+function finishCertificateHtml({teamName='—', timeText='0:00:00', hintCount=0, solutionCount=0, admin=false}={}){
  const debugClass = CERT_DEBUG ? ' certificate-debug' : '';
-
- app.innerHTML = shell(`
+ return `
   <div class="cert-wrap cert-wrap-template">
     <section class="cert-fixed-template${debugClass}" id="cert" aria-label="Certifikát sládkovské odvahy">
       <img class="cert-fixed-bg" src="assets/images/certifikat-bez-titulu.jpg" alt="Certifikát sládkovské odvahy">
       <div id="field-team" class="cert-field cert-field-team" style="${certFieldStyle('team')}">${escapeHtml(teamName)}</div>
-      <div id="field-time" class="cert-field cert-field-time" style="${certFieldStyle('time')}">${escapeHtml(fmtTime(total))}</div>
+      <div id="field-time" class="cert-field cert-field-time" style="${certFieldStyle('time')}">${escapeHtml(timeText)}</div>
       <div id="field-hints" class="cert-field cert-field-hints" style="${certFieldStyle('hints')}">${escapeHtml(String(hintCount))}</div>
       <div id="field-solutions" class="cert-field cert-field-solutions" style="${certFieldStyle('solutions')}">${escapeHtml(String(solutionCount))}</div>
     </section>
@@ -893,8 +900,8 @@ function renderFinish(){
     <button class="btn secondary" onclick="openSelfieBooth()">Vyfotit se s Grollem</button>
     <button class="btn secondary" onclick="openReviewModal()">Ohodnotit hru</button>
     <button class="btn ghost" onclick="openLeaderboard()">Žebříček</button>
-  </div>`);
- addLeaderboardOnce();
+    ${admin?'<button class="btn ghost" onclick="openAdminPanel()">Zpět do adminu</button>':''}
+  </div>`;
 }
 
 
@@ -1135,7 +1142,7 @@ function adminLogHtml(rows){
  return `<h3>Log událostí</h3><table class="admin-table"><tr><th>Čas</th><th>Událost</th><th>Detail</th></tr>${rows.slice(-80).reverse().map(r=>`<tr><td>${adminDate(r.time)}</td><td>${escapeHtml(adminEventName(r))}</td><td>${adminEventDetail(r)}</td></tr>`).join('')}</table>`;
 }
 function adminStationSelect(){
- return `<div class="admin-card"><h3>Náhled zastávek</h3><p class="small muted">Otevře obsah tak, jak ho vidí hráči, ale nezmění rozehranou hru.</p><div class="grid two">${DATA.stations.map(st=>`<button class="btn secondary" onclick="adminPreviewStation(${st.id})">${st.id}/13 ${escapeHtml(st.title)}</button>`).join('')}</div></div>`;
+ return `<div class="admin-card"><h3>Náhled zastávek</h3><p class="small muted">Otevře obsah tak, jak ho vidí hráči, ale nezmění rozehranou hru.</p><div class="grid two">${DATA.stations.map(st=>`<button class="btn secondary" onclick="adminPreviewStation(${st.id})">${st.id}/13 ${escapeHtml(st.title)}</button>`).join('')}<button class="btn" onclick="adminPreviewFinish()">Závěrečná stránka</button></div></div>`;
 }
 function adminPanelHtml(){
  const s=getState();
@@ -1302,7 +1309,7 @@ async function adminPreviewStation(id=null){
  let intro = st.intro || '';
  if(st.id===1 && intro.includes('Po odemčení:')) intro = intro.split('Po odemčení:').pop();
  const more = st.more ? `<div class="accordion open"><button class="acc-head" onclick="toggleAcc(this)">Chci vědět víc <span>⌄</span></button><div class="acc-body">${st.audio?`<audio controls preload="none" src="assets/audio/${encodeURI(st.audio)}"></audio>`:''}<div style="margin-top:10px">${ptxt(st.more)}</div></div></div>` : '';
- const shellHtml=(secretHtml)=>`<h2>Náhled zastávky ${id}/13</h2><h3>${escapeHtml(st.title)}</h3><p class="small muted">Tento náhled nemění rozehranou hru žádného týmu.</p><div class="grid two admin-actions"><button class="btn secondary" onclick="adminPreviewWrongCode(${id})">Test špatného kódu</button><button class="btn secondary" onclick="adminPreviewCorrectCode(${id})">Test správného kódu</button><button class="btn secondary" onclick="adminPreviewBeer(${id})">Test půllitru</button><button class="btn secondary" onclick="adminPreviewCertificate()">Test certifikátu</button></div>${stationImage(st, false)}${introPanel(st, false, intro)}${more}${secretHtml}<div class="admin-card"><p><b>Souřadnice:</b><br>${st.coords.lat}, ${st.coords.lng}</p></div><button class="btn ghost" onclick="openAdminPanel()">Zpět do adminu</button>`;
+ const shellHtml=(secretHtml)=>`<h2>Náhled zastávky ${id}/13</h2><h3>${escapeHtml(st.title)}</h3><p class="small muted">Tento náhled nemění rozehranou hru žádného týmu.</p><div class="grid two admin-actions"><button class="btn secondary" onclick="adminPreviewWrongCode(${id})">Test špatného kódu</button><button class="btn secondary" onclick="adminPreviewCorrectCode(${id})">Test správného kódu</button><button class="btn secondary" onclick="adminPreviewBeer(${id})">Test půllitru</button><button class="btn secondary" onclick="adminPreviewFinish()">Závěrečná stránka</button></div>${stationImage(st, false)}${introPanel(st, false, intro)}${more}${secretHtml}<div class="admin-card"><p><b>Souřadnice:</b><br>${st.coords.lat}, ${st.coords.lng}</p></div><button class="btn ghost" onclick="openAdminPanel()">Zpět do adminu</button>`;
  const token=`${id}-${Date.now()}`;
  window._adminPreviewToken=token;
  const updatePreview=secretHtml=>{
@@ -1345,13 +1352,17 @@ function adminPreviewBeer(id){
  modal(`<div class="success-card"><h2>Test animace půllitru</h2><p class="small muted">Simulace pro admina, nemění hru týmu.</p><div class="success-progress">${beer}</div><button class="btn ghost" onclick="adminPreviewStation(${id})">Zpět na zastávku</button></div>`, false);
 }
 function adminPreviewCertificate(){
- const data={team:'Testovací tým', time:'3:12:45', hints:4, solutions:1};
- modal(`<h2>Test certifikátu</h2><p class="small muted">Náhled pro admina, nemění hru týmu.</p><div class="cert-wrap cert-wrap-template"><section class="cert-fixed-template" aria-label="Certifikát sládkovské odvahy"><img class="cert-fixed-bg" src="assets/images/certifikat-bez-titulu.jpg" alt="Certifikát sládkovské odvahy"><div id="field-team" class="cert-field cert-field-team" style="${certFieldStyle('team')}">${escapeHtml(data.team)}</div><div id="field-time" class="cert-field cert-field-time" style="${certFieldStyle('time')}">${escapeHtml(data.time)}</div><div id="field-hints" class="cert-field cert-field-hints" style="${certFieldStyle('hints')}">${escapeHtml(String(data.hints))}</div><div id="field-solutions" class="cert-field cert-field-solutions" style="${certFieldStyle('solutions')}">${escapeHtml(String(data.solutions))}</div></section></div><button class="btn ghost" style="margin-top:14px" onclick="openAdminPanel()">Zpět do adminu</button>`, false);
+ adminPreviewFinish();
+}
+function adminPreviewFinish(){
+ modal(`<h2>Závěrečná stránka</h2><p class="small muted">Náhled pro admina, nemění rozehranou hru žádného týmu.</p>${finishCertificateHtml({teamName:'Testovací tým', timeText:'3:12:45', hintCount:4, solutionCount:1, admin:true})}`, false);
+ window._adminCertificateData={team:'Testovací tým', time:'3:12:45', hints:4, solutions:1, title:'Grollova pravá ruka', imageSrc:'assets/images/certifikat-bez-titulu.jpg'};
 }
 window.adminPreviewWrongCode = adminPreviewWrongCode;
 window.adminPreviewCorrectCode = adminPreviewCorrectCode;
 window.adminPreviewBeer = adminPreviewBeer;
 window.adminPreviewCertificate = adminPreviewCertificate;
+window.adminPreviewFinish = adminPreviewFinish;
 function adminJump(){ adminPreviewStation(); }
 function adminUnlockNext(){
  toast('Admin náhled už nemění rozehranou hru týmu.');
@@ -1438,10 +1449,14 @@ async function openLeaderboard(){
  modal(`<h2>Žebříček</h2><div style="overflow:auto"><table class="leaderboard-table"><thead><tr><th>Pořadí</th><th>Tým</th><th>Čas</th><th>Titul</th></tr></thead><tbody>${table}</tbody></table></div><p class="small muted" style="margin-top:10px">${sourceText}</p>`);
 }
 async function shareResult(){
+ const adminData=window._adminCertificateData;
  const s=getState();
- if(!s || !s.finished){ toast('Výsledek zatím není k dispozici.'); return; }
- const total=(s.finishTime||now())-s.startTime;
- const text=`Tým ${s.team} dokončil Grollovu zlatou stopu za ${fmtTime(total)} a získal titul ${titleFor(total)}.`;
+ if(!adminData && (!s || !s.finished)){ toast('Výsledek zatím není k dispozici.'); return; }
+ const total=adminData ? 11565000 : (s.finishTime||now())-s.startTime;
+ const team=adminData?.team || s.team;
+ const title=adminData?.title || titleFor(total);
+ const timeText=adminData?.time || fmtTime(total);
+ const text=`Tým ${team} dokončil Grollovu zlatou stopu za ${timeText} a získal titul ${title}.`;
  modal(`<h2>Sdílet výsledek</h2><p>${escapeHtml(text)}</p><div class="share-grid">
   <button class="share-btn native" onclick="shareCertificateNative()">Sdílet v telefonu</button>
   <a class="share-btn facebook" href="${socialUrl('facebook', text)}" target="_blank" rel="noopener">Facebook</a>
@@ -1633,6 +1648,7 @@ async function shareGrollSelfie(){
 
 function exportData(){ const blob=new Blob([JSON.stringify({state:getState(),log:adminLog(),leaderboard:JSON.parse(localStorage.getItem('grollLeaderboard.v1')||'[]')},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='grollova-cesta-export.json'; a.click(); }
 function certificateData(){
+ if(window._adminCertificateData) return window._adminCertificateData;
  const s=getState();
  if(!s || !s.finished) return null;
  const total=(s.finishTime||now())-s.startTime;
@@ -1721,10 +1737,14 @@ function socialUrl(type, text){
  return '#';
 }
 async function shareCertificateNative(){
+ const adminData=window._adminCertificateData;
  const s=getState();
- if(!s || !s.finished){ toast('Výsledek zatím není k dispozici.'); return; }
- const total=(s.finishTime||now())-s.startTime;
- const text=`Tým ${s.team} dokončil Grollovu zlatou stopu za ${fmtTime(total)} a získal titul ${titleFor(total)}.`;
+ if(!adminData && (!s || !s.finished)){ toast('Výsledek zatím není k dispozici.'); return; }
+ const total=adminData ? 11565000 : (s.finishTime||now())-s.startTime;
+ const team=adminData?.team || s.team;
+ const title=adminData?.title || titleFor(total);
+ const timeText=adminData?.time || fmtTime(total);
+ const text=`Tým ${team} dokončil Grollovu zlatou stopu za ${timeText} a získal titul ${title}.`;
  try{
   const blob=await createCertificateBlob();
   const file=new File([blob], certFileName(), {type:'image/png'});
@@ -1776,7 +1796,7 @@ function openMenu(){
  </div>`, false);
 }
 function modal(html, showClose=true){ closeModal(); const d=document.createElement('div'); d.className='modal-back'; d.innerHTML=`<div class="modal">${html}${showClose?`<button class="btn ghost" style="margin-top:14px" onclick="closeModal()">Zpět do hry</button>`:''}</div>`; d.addEventListener('click',e=>{ if(e.target===d && showClose) closeModal(); }); document.body.appendChild(d); }
-function closeModal(){ stopSelfieCamera(); document.querySelectorAll('.modal-back').forEach(x=>x.remove()); }
+function closeModal(){ stopSelfieCamera(); window._adminCertificateData=null; document.querySelectorAll('.modal-back').forEach(x=>x.remove()); }
 Object.assign(window, {
  openReviewModal,
  openReviewTarget,
