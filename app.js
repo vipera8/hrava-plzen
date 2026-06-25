@@ -795,20 +795,36 @@ function toggleJingle(){
  }
 }
 function playJingle(){ toggleJingle(); }
-function openCode(){ const st=station(getState().currentStation); if(st.id===13){ modal(`<h2>Dokončit hru</h2><p>Zadejte finální slovo z cryptexu.</p><div class="code-row"><input id="codeInput" type="text" placeholder="Zadejte slovo"><button class="btn" onclick="finishCode()">Ověřit</button></div>`); setTimeout(()=>$('#codeInput')?.focus(),50); return; } modal(`<h2>Zadat app-kód</h2><p>App-kód najdete na kartičce uvnitř fyzicky otevřené schránky.</p><div class="code-row"><input id="codeInput" type="text" placeholder="KÓD"><button class="btn" onclick="checkCode()">Ověřit</button></div><p class="small muted">Kontrola ignoruje mezery, velikost písmen a diakritiku.</p>`); setTimeout(()=>$('#codeInput')?.focus(),50); }
-async function checkCode(){
- const s=getState(), st=station(s.currentStation), val=normalize($('#codeInput').value);
+function openCode(){ const st=station(getState().currentStation); if(st.id===13){ modal(`<h2>Dokončit hru</h2><p>Zadejte finální slovo z cryptexu.</p><div class="code-row"><input id="codeInput" type="text" placeholder="Zadejte slovo"><button class="btn" onclick="finishCode(${st.id}, this)">Ověřit</button></div>`); setTimeout(()=>$('#codeInput')?.focus(),50); return; } modal(`<h2>Zadat app-kód</h2><p>App-kód najdete na kartičce uvnitř fyzicky otevřené schránky.</p><div class="code-row"><input id="codeInput" type="text" placeholder="KÓD"><button class="btn" onclick="checkCode(${st.id}, this)">Ověřit</button></div><p class="small muted">Kontrola ignoruje mezery, velikost písmen a diakritiku.</p>`); setTimeout(()=>$('#codeInput')?.focus(),50); }
+async function checkCode(expectedStationId, btn){
+ if(window._stationCodeChecking) return;
+ window._stationCodeChecking=true;
+ if(btn) btn.disabled=true;
+ const input=$('#codeInput');
+ if(input) input.disabled=true;
+ const expectedId=Number(expectedStationId || getState().currentStation);
+ const s=getState(), st=station(expectedId), val=normalize(input?.value || '');
+ if(s.currentStation!==expectedId){
+  window._stationCodeChecking=false;
+  closeModal();
+  renderGameApp();
+  return;
+ }
  let ok=false;
  try{
   const data=await backendRequest('checkStationCode', {accessCode:s.accessCode || activeAccessCode(), station:st.id, value:val, _:Date.now()});
   ok=!!data?.ok;
  }catch(e){
   toast('Kód se nepodařilo ověřit. Zkontrolujte připojení a zkuste to znovu.');
+  window._stationCodeChecking=false;
+  if(btn) btn.disabled=false;
+  if(input) input.disabled=false;
   return;
  }
+ window._stationCodeChecking=false;
  if(ok){
   closeModal();
-  completeStation();
+  completeStation(expectedId);
  } else {
   s.wrong[st.id]=(s.wrong[st.id]||0)+1;
   s.wrongTotal=(s.wrongTotal||0)+1;
@@ -820,10 +836,18 @@ async function checkCode(){
   toast(msg);
   $('.modal')?.classList.add('shake');
   setTimeout(()=>$('.modal')?.classList.remove('shake'),450);
+  if(btn) btn.disabled=false;
+  if(input) input.disabled=false;
  }
 }
-function completeStation(){
- const s=getState(), st=station(s.currentStation);
+function completeStation(expectedStationId){
+ const s=getState();
+ const expectedId=Number(expectedStationId || s.currentStation);
+ if(s.currentStation!==expectedId || s.completed.includes(expectedId)){
+  renderGameApp();
+  return;
+ }
+ const st=station(expectedId);
  const previousDone = s.completed.length;
  if(!s.completed.includes(st.id)) s.completed.push(st.id);
  addLog('station_completed');
@@ -856,16 +880,37 @@ function completeStation(){
  }
  modal(`<div class="success-card"><h2>${successText}</h2><p>Výborně! Vaše další zastávka je:</p><h3>${escapeHtml(next.title)}</h3><div class="success-progress">${beer}</div><a class="btn" href="${mapsUrl(next)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Navigovat</a><button class="btn secondary" onclick="closeModal(); returnToGame()" style="margin-top:10px">Pokračovat na další zastávku</button></div>`, false);
 }
-async function finishCode(){
- const s=getState(), st=station(s.currentStation), val=normalize($('#codeInput').value);
+async function finishCode(expectedStationId, btn){
+ if(window._stationCodeChecking) return;
+ window._stationCodeChecking=true;
+ if(btn) btn.disabled=true;
+ const input=$('#codeInput');
+ if(input) input.disabled=true;
+ const expectedId=Number(expectedStationId || getState().currentStation);
+ const s=getState(), st=station(expectedId), val=normalize(input?.value || '');
+ if(s.currentStation!==expectedId){
+  window._stationCodeChecking=false;
+  closeModal();
+  renderGameApp();
+  return;
+ }
  try{
   const data=await backendRequest('checkStationCode', {accessCode:s.accessCode || activeAccessCode(), station:st.id, value:val, _:Date.now()});
   if(data?.ok){
    closeModal();
-   completeStation();
-  } else toast('Finální slovo nesedí. Zkontrolujte pořadí lahviček.');
+   window._stationCodeChecking=false;
+   completeStation(expectedId);
+  } else {
+   toast('Finální slovo nesedí. Zkontrolujte pořadí lahviček.');
+   window._stationCodeChecking=false;
+   if(btn) btn.disabled=false;
+   if(input) input.disabled=false;
+  }
  }catch(e){
   toast('Finální slovo se nepodařilo ověřit. Zkontrolujte připojení a zkuste to znovu.');
+  window._stationCodeChecking=false;
+  if(btn) btn.disabled=false;
+  if(input) input.disabled=false;
  }
 }
 function titleFor(ms){ const h=ms/36e5; if(h<=2.5) return 'Mistři sládkové'; if(h<=3) return 'Grollova pravá ruka'; if(h<=3.5) return 'Pivovarští tovaryši'; if(h<=4) return 'Hledači ztracené várky'; return 'Stateční poutníci za pivem'; }

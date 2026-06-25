@@ -10,7 +10,7 @@ const HEADERS = {
   leads: ['time','type','name','email','phone','payload','status'],
   secrets: ['stationId','title','unlockCode','hintsJson','solutionJson'],
   secretImages: ['fileName','driveFileId','mimeType','notes'],
-  teams: ['id','team','accessCode','currentStation','stationTitle','startTime','updatedAt','finished','finishTime','hints','solutions','wrong','wrongTotal','completed','lastPos'],
+  teams: ['id','team','accessCode','currentStation','stationTitle','startTime','updatedAt','finished','finishTime','hints','solutions','wrong','wrongTotal','completed','lastPos','startTimeCz','updatedAtCz','finishTimeCz'],
   events: ['time','teamId','team','accessCode','type','eventName','station','stationTitle','hint','value','detail'],
   leaderboard: ['id','team','total','hints','solutions','title','date']
 };
@@ -43,6 +43,13 @@ function normalize_(v){ return String(v||'').trim().toUpperCase().normalize('NFD
 function parseJson_(v,f){ try{return JSON.parse(String(v||''));}catch(e){return f;} }
 function mediaTypeFromName_(name){ const ext=String(name||'').split('.').pop().toLowerCase(); if(ext==='jpg'||ext==='jpeg') return 'image/jpeg'; if(ext==='png') return 'image/png'; if(ext==='webp') return 'image/webp'; return 'application/octet-stream'; }
 function czDateTime_(){ return Utilities.formatDate(new Date(), 'Europe/Prague', 'dd.MM.yyyy HH:mm:ss'); }
+function formatDateTimeCz_(value){
+  if(!value) return '';
+  const n=Number(value);
+  const d=isNaN(n) ? new Date(String(value)) : new Date(n);
+  if(isNaN(d.getTime())) return '';
+  return Utilities.formatDate(d, 'Europe/Prague', 'dd.MM.yyyy HH:mm:ss');
+}
 
 function stationSecret_(id){ return rows_(SHEETS.secrets).find(r=>Number(r.stationId)===Number(id)); }
 function secretImage_(name){ const target=String(name||'').trim(); if(!target) return null; return rows_(SHEETS.secretImages).find(r=>String(r.fileName||'').trim()===target) || null; }
@@ -119,7 +126,31 @@ function saveLead_(e){
   const type=String(e.parameter.type||'kontakt'); const name=String(p['Jméno a příjmení']||p['Jméno objednatele']||p['Kontaktní osoba']||p['Jméno']||p['Název firmy']||'');
   const email=String(p['E-mail']||''), phone=String(p['Telefon']||''); sh.appendRow([czDateTime_(),type,name,email,phone,payloadText,'new']);
   if(LEAD_NOTIFICATION_EMAIL && LEAD_NOTIFICATION_EMAIL.indexOf('@')>-1) MailApp.sendEmail({to:LEAD_NOTIFICATION_EMAIL,subject:'Hravá Plzeň - '+type,body:Object.keys(p).map(k=>k+': '+p[k]).join('\n')});
+  if(email && email.indexOf('@')>-1) MailApp.sendEmail({to:email,subject:leadCustomerSubject_(type),body:leadCustomerBody_(type,name,p)});
   return json_({ok:true},e);
+}
+function leadCustomerSubject_(type){
+  if(type==='rezervace') return 'Grollova zlatá stopa - přijali jsme vaši rezervaci';
+  if(type==='poukaz') return 'Grollova zlatá stopa - přijali jsme objednávku dárkového poukazu';
+  if(type==='firma') return 'Grollova zlatá stopa - přijali jsme firemní poptávku';
+  return 'Hravá Plzeň - přijali jsme vaši zprávu';
+}
+function leadCustomerBody_(type,name,p){
+  const hello=name ? 'Dobrý den, '+name+',' : 'Dobrý den,';
+  const footer='\n\nHravá Plzeň\nGrollova zlatá stopa\nE-mail: hravaplzen@gmail.com\nTelefon: 737 256 827\n\nToto je automatické potvrzení přijetí formuláře.';
+  if(type==='rezervace'){
+    return hello+'\n\nDěkujeme za rezervaci hry Grollova zlatá stopa.\n\nVaši poptávku jsme přijali. Nejdříve ověříme požadovaný termín a poté vám pošleme potvrzení s platebními údaji a dalšími informacemi ke startu hry.\n\nShrnutí rezervace:\n'+leadPayloadLines_(p)+footer;
+  }
+  if(type==='poukaz'){
+    return hello+'\n\nDěkujeme za objednávku dárkového poukazu na hru Grollova zlatá stopa.\n\nObjednávku jsme přijali. Brzy vám pošleme platební údaje. Po přijetí platby vystavíme elektronický poukaz s unikátním kódem. Platnost poukazu je 12 měsíců od zaplacení.\n\nShrnutí objednávky:\n'+leadPayloadLines_(p)+footer;
+  }
+  if(type==='firma'){
+    return hello+'\n\nDěkujeme za firemní poptávku ke hře Grollova zlatá stopa.\n\nPoptávku jsme přijali a ozveme se vám s návrhem dalšího postupu a vhodného termínu.\n\nShrnutí poptávky:\n'+leadPayloadLines_(p)+footer;
+  }
+  return hello+'\n\nDěkujeme za zprávu. Přijali jsme ji a brzy se vám ozveme.\n\nShrnutí zprávy:\n'+leadPayloadLines_(p)+footer;
+}
+function leadPayloadLines_(p){
+  return Object.keys(p).filter(k=>String(p[k]||'').trim()).map(k=>'- '+k+': '+p[k]).join('\n');
 }
 function createAccessCodes_(p){
   const sh=getSheet_(SHEETS.accessCodes,HEADERS.accessCodes); const count=Math.max(1,Math.min(100,Number(p.count||1))); const existing=new Set(rows_(SHEETS.accessCodes).map(r=>normalize_(r.accessCode))); const out=[], batch=[], now=new Date().toISOString();
@@ -128,7 +159,8 @@ function createAccessCodes_(p){
 }
 function saveTeamState_(e){
   const id=String(e.parameter.id||''); if(!id) return json_({ok:false,error:'missing id'},e); const sh=getSheet_(SHEETS.teams,HEADERS.teams); const accessCode=normalize_(e.parameter.accessCode||''); const row=findRowById_(sh,id);
-  const values=[id,String(e.parameter.team||''),accessCode,Number(e.parameter.currentStation||1),String(e.parameter.stationTitle||''),String(e.parameter.startTime||''),String(e.parameter.updatedAt||new Date().toISOString()),String(e.parameter.finished||'0'),String(e.parameter.finishTime||''),String(e.parameter.hints||'{}'),String(e.parameter.solutions||'{}'),String(e.parameter.wrong||'{}'),Number(e.parameter.wrongTotal||0),String(e.parameter.completed||'[]'),String(e.parameter.lastPos||'')];
+  const startTime=String(e.parameter.startTime||''), updatedAt=String(e.parameter.updatedAt||new Date().toISOString()), finishTime=String(e.parameter.finishTime||'');
+  const values=[id,String(e.parameter.team||''),accessCode,Number(e.parameter.currentStation||1),String(e.parameter.stationTitle||''),startTime,updatedAt,String(e.parameter.finished||'0'),finishTime,String(e.parameter.hints||'{}'),String(e.parameter.solutions||'{}'),String(e.parameter.wrong||'{}'),Number(e.parameter.wrongTotal||0),String(e.parameter.completed||'[]'),String(e.parameter.lastPos||''),formatDateTimeCz_(startTime),formatDateTimeCz_(updatedAt),formatDateTimeCz_(finishTime)];
   if(row>0) sh.getRange(row,1,1,values.length).setValues([values]); else sh.appendRow(values); if(accessCode) touchAccessCode_(accessCode,{teamId:id,teamName:String(e.parameter.team||''),startedAt:String(e.parameter.startTime||''),lastUsedAt:new Date().toISOString()}); return json_({ok:true},e);
 }
 function saveEvent_(e){ const sh=getSheet_(SHEETS.events,HEADERS.events); const item={time:String(e.parameter.time||new Date().toISOString()),teamId:String(e.parameter.teamId||''),team:String(e.parameter.team||''),accessCode:normalize_(e.parameter.accessCode||''),type:String(e.parameter.type||''),eventName:String(e.parameter.eventName||''),station:Number(e.parameter.station||1),stationTitle:String(e.parameter.stationTitle||''),hint:String(e.parameter.hint||''),value:String(e.parameter.value||''),detail:String(e.parameter.detail||'{}')}; const headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(String); sh.appendRow(headers.map(h=>item[h]!==undefined?item[h]:'')); return json_({ok:true},e); }
