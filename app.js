@@ -1557,10 +1557,11 @@ function openSelfieBooth(){
    <img id="selfieGroll" class="selfie-groll" src="${SELFIE_GROLL_SRC}" alt="Josef Groll připíjí pivem">
    <canvas id="selfieCanvas" class="selfie-canvas" width="1080" height="1440"></canvas>
    <img id="selfieResult" class="selfie-result" alt="Historická selfie s Grollem">
+   <div class="selfie-brand-strip"><span>Grollova zlatá stopa</span><b>Hravá Plzeň</b></div>
    <button id="selfieCaptureBtn" class="selfie-capture-btn" type="button" onclick="captureGrollSelfie()">Vyfotit</button>
   </div>
   <div class="selfie-controls">
-   <label>Velikost Grolla <input id="selfieSize" type="range" min="26" max="72" value="38" oninput="updateSelfieOverlay()"></label>
+   <label>Velikost Grolla <input id="selfieSize" type="range" min="22" max="64" value="34" oninput="updateSelfieOverlay()"></label>
    <label>Posun do stran <input id="selfieX" type="range" min="0" max="100" value="82" oninput="updateSelfieOverlay()"></label>
    <label>Výška <input id="selfieY" type="range" min="0" max="55" value="0" oninput="updateSelfieOverlay()"></label>
   </div>
@@ -1599,7 +1600,7 @@ function updateSelfieStageShape(){
 function updateSelfieOverlay(){
  const img=$('#selfieGroll');
  if(!img) return;
- const size=Number($('#selfieSize')?.value || 38);
+ const size=Number($('#selfieSize')?.value || 34);
  const x=Number($('#selfieX')?.value || 82);
  const y=Number($('#selfieY')?.value || 0);
  img.style.height=size+'%';
@@ -1607,23 +1608,26 @@ function updateSelfieOverlay(){
  img.style.bottom=y+'%';
 }
 function selfieVintageFilter(){
- return 'sepia(.46) saturate(.82) contrast(1.12) brightness(1.02)';
+ return 'sepia(.24) saturate(.78) contrast(1.04) brightness(.98)';
+}
+function selfieGrollFilter(){
+ return 'sepia(.62) saturate(.48) contrast(.92) brightness(.58)';
 }
 async function captureGrollSelfie(){
  const video=$('#selfieVideo'), groll=$('#selfieGroll'), canvas=$('#selfieCanvas'), result=$('#selfieResult'), status=$('#selfieStatus'), captureBtn=$('#selfieCaptureBtn');
  if(!video || !groll || !canvas || !video.videoWidth){ if(status) status.textContent='Fotoaparát ještě není připravený.'; return; }
- const portrait=video.videoHeight>=video.videoWidth;
+ const portrait=!$('#selfieStage')?.classList.contains('landscape');
  canvas.width=portrait ? 1080 : 1440;
  canvas.height=portrait ? 1440 : 1080;
  const ctx=canvas.getContext('2d');
  ctx.save();
- ctx.filter=selfieVintageFilter();
+ ctx.filter='contrast(1.02) brightness(.98) saturate(.92)';
  ctx.translate(canvas.width,0);
  ctx.scale(-1,1);
  drawCover(ctx, video, 0, 0, canvas.width, canvas.height);
  ctx.restore();
  const overlay=await loadImage(SELFIE_GROLL_SRC);
- const size=Number($('#selfieSize')?.value || 38)/100;
+ const size=Number($('#selfieSize')?.value || 34)/100;
  const xPct=Number($('#selfieX')?.value || 82)/100;
  const yPct=Number($('#selfieY')?.value || 0)/100;
  const gh=canvas.height*size;
@@ -1631,9 +1635,11 @@ async function captureGrollSelfie(){
  const gx=canvas.width*xPct-gw/2;
  const gy=canvas.height-canvas.height*yPct-gh;
  ctx.save();
- ctx.filter=selfieVintageFilter();
+ ctx.filter=selfieGrollFilter();
+ ctx.globalAlpha=.88;
  ctx.drawImage(overlay,gx,gy,gw,gh);
  ctx.restore();
+ applyAntiquePhoto(ctx, canvas);
  drawSelfieFinish(ctx, canvas);
  selfieLastBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
  if(result && selfieLastBlob){
@@ -1642,6 +1648,7 @@ async function captureGrollSelfie(){
   video.style.display='none';
   groll.style.display='none';
   if(captureBtn) captureBtn.style.display='none';
+  $('#selfieStage')?.classList.add('captured');
  }
  if(status) status.textContent='Hotovo. Fotku si můžete stáhnout nebo sdílet přes telefon.';
  addLog('selfie_captured');
@@ -1653,13 +1660,26 @@ function drawCover(ctx, source, x, y, w, h){
  const dw=sw*scale, dh=sh*scale;
  ctx.drawImage(source,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
 }
+function applyAntiquePhoto(ctx, canvas){
+ const image=ctx.getImageData(0,0,canvas.width,canvas.height);
+ const data=image.data;
+ for(let i=0;i<data.length;i+=4){
+  const r=data[i], g=data[i+1], b=data[i+2];
+  let lum=0.299*r+0.587*g+0.114*b;
+  lum=(lum-128)*1.04+128;
+  data[i]=clamp(Math.round(lum*.98+34),0,255);
+  data[i+1]=clamp(Math.round(lum*.84+28),0,255);
+  data[i+2]=clamp(Math.round(lum*.58+18),0,255);
+ }
+ ctx.putImageData(image,0,0);
+}
 function drawSelfieFinish(ctx, canvas){
  ctx.save();
  ctx.globalCompositeOperation='multiply';
- ctx.fillStyle='rgba(214,167,94,.18)';
+ ctx.fillStyle='rgba(196,139,72,.16)';
  ctx.fillRect(0,0,canvas.width,canvas.height);
  ctx.globalCompositeOperation='screen';
- ctx.fillStyle='rgba(255,232,176,.08)';
+ ctx.fillStyle='rgba(255,230,178,.06)';
  ctx.fillRect(0,0,canvas.width,canvas.height);
  ctx.restore();
  const vignette=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.width*.18,canvas.width/2,canvas.height/2,canvas.width*.82);
@@ -1670,18 +1690,23 @@ function drawSelfieFinish(ctx, canvas){
  ctx.fillRect(0,0,canvas.width,canvas.height);
  ctx.fillStyle='rgba(255,236,184,.10)';
  ctx.fillRect(0,0,canvas.width,canvas.height);
- ctx.strokeStyle='rgba(76,38,8,.65)';
- ctx.lineWidth=Math.max(18,canvas.width*.018);
- ctx.strokeRect(ctx.lineWidth/2,ctx.lineWidth/2,canvas.width-ctx.lineWidth,canvas.height-ctx.lineWidth);
- const labelPad=Math.round(canvas.width*.018);
- const labelH=Math.round(canvas.width*.048);
- ctx.fillStyle='rgba(43,24,10,.34)';
- ctx.fillRect(labelPad,canvas.height-labelH-labelPad,labelH*9,labelH);
+ const border=Math.max(22,canvas.width*.022);
+ ctx.strokeStyle='rgba(71,38,14,.9)';
+ ctx.lineWidth=border;
+ ctx.strokeRect(border/2,border/2,canvas.width-border,canvas.height-border);
+ ctx.strokeStyle='rgba(245,205,126,.62)';
+ ctx.lineWidth=Math.max(5,canvas.width*.006);
+ ctx.strokeRect(border*1.15,border*1.15,canvas.width-border*2.3,canvas.height-border*2.3);
+ const labelH=Math.round(canvas.height*.052);
+ ctx.fillStyle='rgba(35,18,7,.72)';
+ ctx.fillRect(0,canvas.height-labelH,canvas.width,labelH);
+ ctx.fillStyle='rgba(245,205,126,.82)';
+ ctx.fillRect(0,canvas.height-labelH,canvas.width,Math.max(3,canvas.height*.004));
  ctx.fillStyle='#f8dfaa';
  ctx.textAlign='center';
  ctx.textBaseline='middle';
- ctx.font=`700 ${Math.round(canvas.width*.024)}px Georgia, "Times New Roman", serif`;
- ctx.fillText('Grollova zlatá stopa · Hravá Plzeň', labelPad+(labelH*4.5), canvas.height-labelPad-(labelH/2));
+ ctx.font=`700 ${Math.round(canvas.width*.025)}px Georgia, "Times New Roman", serif`;
+ ctx.fillText('Grollova zlatá stopa · Hravá Plzeň', canvas.width/2, canvas.height-labelH/2);
 }
 function retakeGrollSelfie(){
  const video=$('#selfieVideo'), groll=$('#selfieGroll'), result=$('#selfieResult'), status=$('#selfieStatus'), captureBtn=$('#selfieCaptureBtn');
@@ -1689,6 +1714,7 @@ function retakeGrollSelfie(){
  if(video) video.style.display='block';
  if(groll) groll.style.display='block';
  if(captureBtn) captureBtn.style.display='inline-flex';
+ $('#selfieStage')?.classList.remove('captured');
  if(status) status.textContent='Nastavte záběr a vyfoťte se znovu.';
 }
 function selfieFileName(){

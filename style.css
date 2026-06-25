@@ -1483,7 +1483,7 @@
   position:relative;
   overflow:hidden;
   aspect-ratio:3/4;
-  max-height:min(62dvh,640px);
+  max-height:min(66dvh,680px);
   width:100%;
   margin:0 auto;
   border-radius:22px;
@@ -1493,7 +1493,7 @@
 }
 .selfie-stage.landscape{
   aspect-ratio:4/3;
-  max-height:min(58dvh,520px);
+  max-height:none;
 }
 .selfie-video,
 .selfie-canvas,
@@ -1506,7 +1506,7 @@
 }
 .selfie-video{
   transform:scaleX(-1);
-  filter:sepia(.46) saturate(.82) contrast(1.12) brightness(1.02);
+  filter:sepia(.24) saturate(.78) contrast(1.04) brightness(.98);
 }
 .selfie-canvas{
   display:none;
@@ -1519,10 +1519,11 @@
   position:absolute;
   z-index:2;
   transform:translateX(-50%);
-  height:38%;
+  height:34%;
   max-width:none;
   pointer-events:none;
-  filter:sepia(.46) saturate(.82) contrast(1.12) brightness(1.02) drop-shadow(0 12px 18px rgba(0,0,0,.35));
+  opacity:.88;
+  filter:sepia(.62) saturate(.48) contrast(.92) brightness(.58) drop-shadow(0 12px 18px rgba(0,0,0,.35));
 }
 .selfie-stage::after{
   content:"";
@@ -1531,15 +1532,42 @@
   z-index:3;
   pointer-events:none;
   background:
-    radial-gradient(circle at center, rgba(255,236,184,0) 46%, rgba(50,24,7,.34) 100%),
-    linear-gradient(0deg, rgba(130,78,28,.14), rgba(255,232,176,.08));
+    radial-gradient(circle at center, rgba(255,236,184,0) 54%, rgba(50,24,7,.18) 100%),
+    linear-gradient(0deg, rgba(130,78,28,.08), rgba(255,232,176,.05));
   mix-blend-mode:multiply;
+}
+.selfie-stage.captured::after{
+  display:none;
+}
+.selfie-brand-strip{
+  position:absolute;
+  z-index:4;
+  left:0;
+  right:0;
+  bottom:0;
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  background:rgba(35,18,7,.72);
+  border-top:2px solid rgba(245,205,126,.72);
+  color:#f8dfaa;
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:13px;
+  pointer-events:none;
+}
+.selfie-brand-strip span{
+  font-weight:700;
+}
+.selfie-brand-strip b{
+  font-weight:900;
 }
 .selfie-capture-btn{
   position:absolute;
   z-index:5;
   left:50%;
-  bottom:12px;
+  bottom:48px;
   transform:translateX(-50%);
   display:inline-flex;
   align-items:center;
@@ -1548,7 +1576,7 @@
   border:0;
   border-radius:999px;
   padding:12px 20px;
-  background:rgba(111,61,18,.92);
+  background:rgba(111,61,18,.95);
   color:#fff5d6;
   font-weight:900;
   box-shadow:0 10px 26px rgba(0,0,0,.34);
@@ -1581,7 +1609,7 @@
 @media(orientation:landscape) and (max-height:560px){
   .selfie-stage,
   .selfie-stage.landscape{
-    max-height:56dvh;
+    max-height:none;
   }
   .selfie-controls{
     grid-template-columns:repeat(3,1fr);
