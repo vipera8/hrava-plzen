@@ -1506,7 +1506,7 @@
 }
 .selfie-video{
   transform:scaleX(-1);
-  filter:sepia(.68) contrast(1.1) saturate(.74) brightness(1.05);
+  filter:sepia(.46) saturate(.82) contrast(1.12) brightness(1.02);
 }
 .selfie-canvas{
   display:none;
@@ -1522,11 +1522,22 @@
   height:38%;
   max-width:none;
   pointer-events:none;
-  filter:drop-shadow(0 12px 18px rgba(0,0,0,.35));
+  filter:sepia(.46) saturate(.82) contrast(1.12) brightness(1.02) drop-shadow(0 12px 18px rgba(0,0,0,.35));
+}
+.selfie-stage::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at center, rgba(255,236,184,0) 46%, rgba(50,24,7,.34) 100%),
+    linear-gradient(0deg, rgba(130,78,28,.14), rgba(255,232,176,.08));
+  mix-blend-mode:multiply;
 }
 .selfie-capture-btn{
   position:absolute;
-  z-index:4;
+  z-index:5;
   left:50%;
   bottom:12px;
   transform:translateX(-50%);

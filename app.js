@@ -1606,6 +1606,9 @@ function updateSelfieOverlay(){
  img.style.left=x+'%';
  img.style.bottom=y+'%';
 }
+function selfieVintageFilter(){
+ return 'sepia(.46) saturate(.82) contrast(1.12) brightness(1.02)';
+}
 async function captureGrollSelfie(){
  const video=$('#selfieVideo'), groll=$('#selfieGroll'), canvas=$('#selfieCanvas'), result=$('#selfieResult'), status=$('#selfieStatus'), captureBtn=$('#selfieCaptureBtn');
  if(!video || !groll || !canvas || !video.videoWidth){ if(status) status.textContent='Fotoaparát ještě není připravený.'; return; }
@@ -1614,7 +1617,7 @@ async function captureGrollSelfie(){
  canvas.height=portrait ? 1440 : 1080;
  const ctx=canvas.getContext('2d');
  ctx.save();
- ctx.filter='sepia(.68) contrast(1.1) saturate(.74) brightness(1.05)';
+ ctx.filter=selfieVintageFilter();
  ctx.translate(canvas.width,0);
  ctx.scale(-1,1);
  drawCover(ctx, video, 0, 0, canvas.width, canvas.height);
@@ -1627,7 +1630,10 @@ async function captureGrollSelfie(){
  const gw=gh*(overlay.naturalWidth||overlay.width)/(overlay.naturalHeight||overlay.height);
  const gx=canvas.width*xPct-gw/2;
  const gy=canvas.height-canvas.height*yPct-gh;
+ ctx.save();
+ ctx.filter=selfieVintageFilter();
  ctx.drawImage(overlay,gx,gy,gw,gh);
+ ctx.restore();
  drawSelfieFinish(ctx, canvas);
  selfieLastBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
  if(result && selfieLastBlob){
@@ -1648,12 +1654,21 @@ function drawCover(ctx, source, x, y, w, h){
  ctx.drawImage(source,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
 }
 function drawSelfieFinish(ctx, canvas){
+ ctx.save();
+ ctx.globalCompositeOperation='multiply';
+ ctx.fillStyle='rgba(214,167,94,.18)';
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.globalCompositeOperation='screen';
+ ctx.fillStyle='rgba(255,232,176,.08)';
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.restore();
  const vignette=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.width*.18,canvas.width/2,canvas.height/2,canvas.width*.82);
  vignette.addColorStop(0,'rgba(255,244,210,0)');
- vignette.addColorStop(1,'rgba(48,24,7,.42)');
+ vignette.addColorStop(.66,'rgba(112,67,24,.06)');
+ vignette.addColorStop(1,'rgba(48,24,7,.5)');
  ctx.fillStyle=vignette;
  ctx.fillRect(0,0,canvas.width,canvas.height);
- ctx.fillStyle='rgba(255,244,210,.16)';
+ ctx.fillStyle='rgba(255,236,184,.10)';
  ctx.fillRect(0,0,canvas.width,canvas.height);
  ctx.strokeStyle='rgba(76,38,8,.65)';
  ctx.lineWidth=Math.max(18,canvas.width*.018);
