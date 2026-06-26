@@ -1193,7 +1193,7 @@ function adminLogHtml(rows){
  return `<h3>Log událostí</h3><table class="admin-table"><tr><th>Čas</th><th>Událost</th><th>Detail</th></tr>${rows.slice(-80).reverse().map(r=>`<tr><td>${adminDate(r.time)}</td><td>${escapeHtml(adminEventName(r))}</td><td>${adminEventDetail(r)}</td></tr>`).join('')}</table>`;
 }
 function adminStationSelect(){
- return `<div class="admin-card"><h3>Náhled zastávek</h3><p class="small muted">Otevře obsah tak, jak ho vidí hráči, ale nezmění rozehranou hru.</p><div class="grid two">${DATA.stations.map(st=>`<button class="btn secondary" onclick="adminPreviewStation(${st.id})">${st.id}/13 ${escapeHtml(st.title)}</button>`).join('')}<button class="btn" onclick="adminPreviewFinish()">Závěrečná stránka</button></div></div>`;
+ return `<div class="admin-card"><h3>Náhled hry</h3><p class="small muted">Otevře obsah tak, jak ho vidí hráči, ale nezmění rozehranou hru.</p><div class="grid two"><button class="btn" onclick="adminPreviewStart()">Úvodní stránka</button>${DATA.stations.map(st=>`<button class="btn secondary" onclick="adminPreviewStation(${st.id})">${st.id}/13 ${escapeHtml(st.title)}</button>`).join('')}<button class="btn" onclick="adminPreviewFinish()">Závěrečná stránka</button></div></div>`;
 }
 function adminPanelHtml(){
  const s=getState();
@@ -1300,6 +1300,7 @@ async function loadOnlineAdmin(){
  }
 }
 window.loadOnlineAdmin = loadOnlineAdmin;
+window.adminPreviewStart = adminPreviewStart;
 
 async function adminLogin(event){
  if(event) event.preventDefault();
@@ -1330,6 +1331,17 @@ async function adminLogin(event){
 }
 window.adminLogin = adminLogin;
 const adminStationCache = new Map();
+function adminPreviewStart(){
+ modal(`<h2>Úvodní stránka</h2><p class="small muted">Náhled pro admina, nemění rozehranou hru žádného týmu.</p>
+  <figure class="start-visual"><img src="assets/images/groll_uvod.jpg" alt="Grollova zlatá stopa" loading="eager"></figure>
+  <div class="hero hero-intro start-copy"><p class="hero-subtitle">Venkovní úniková hra v historickém srdci Plzně.</p><p class="lead">Čeká vás 13 zastávek, historické město a zamčená tajemství. Dívejte se pozorně, poslouchejte a použijte vše, co po cestě získáte.</p></div>
+  <div class="card"><label>Název týmu</label><input type="text" placeholder="Např. Sládkové z Plzně" autocomplete="off"></div>
+  <div class="accordion"><button class="acc-head" onclick="toggleAcc(this)">Pravidla hry <span>⌄</span></button><div class="acc-body">${rulesText()}</div></div>
+  <div class="card"><label class="check"><input type="checkbox"> <span>Potvrzuji, že se účastním hry dobrovolně a na vlastní odpovědnost. Budu dodržovat pravidla hry, pravidla silničního provozu a nebudu vstupovat do nebezpečných ani zakázaných míst.</span></label></div>
+  <div class="accordion location-accordion open"><button class="acc-head" onclick="toggleAcc(this)">Použití polohy <span>⌄</span></button><div class="acc-body location-body"><p>Poloha nám pomůže navést vás k další zastávce, ověřit, že jste na správném místě, a v případě SOS poslat správci vaši aktuální pozici.</p></div><div class="location-actions"><button class="btn" onclick="toast('Toto je jen admin náhled.')">Povolit polohu</button><button class="text-link location-skip" onclick="toast('Toto je jen admin náhled.')">Pokračovat bez polohy</button></div></div>
+  <button class="btn" onclick="toast('Toto je jen admin náhled.')">Načepovat první stopu</button>
+  <button class="btn ghost" style="margin-top:14px" onclick="openAdminPanel()">Zpět do adminu</button>`, false);
+}
 async function fetchAdminStationData(id){
  const cached=adminStationCache.get(id);
  if(cached?.loaded) return cached;
