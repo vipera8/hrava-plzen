@@ -1653,3 +1653,18 @@
   .legal-menu{display:flex;position:static;background:transparent;border:0;padding:0;gap:12px}
   .price-grid.price-grid-two{grid-template-columns:1fr;max-width:none}
 }
+
+/* v155 game variants */
+.price-grid.game-variants{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}
+.price-card{display:flex;flex-direction:column;gap:14px}
+.price-card.featured{outline:2px solid rgba(156,101,29,.42);box-shadow:0 24px 70px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,230,170,.46)}
+.price-badge{align-self:flex-start;margin:0;padding:7px 11px;border-radius:999px;background:rgba(76,38,8,.12);color:#6b3b11;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.price-card.featured .price-badge{background:linear-gradient(135deg,#f3c86a,#9c651d);color:#1b0c04}
+.variant-meta{margin:0;color:#5b3515;font-weight:900}
+.variant-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:auto}
+.variant-prices>div{padding:12px;border-radius:16px;background:rgba(255,248,231,.56);border:1px solid rgba(96,52,17,.16)}
+.variant-prices span{display:block;margin-bottom:4px;color:#5b3515;font-weight:900}
+.web-form select{border:1px solid rgba(96,52,17,.3);border-radius:12px;padding:11px;background:#fff8e7;color:#2b1507;font:inherit}
+@media(max-width:900px){
+  .price-grid.game-variants,.variant-prices{grid-template-columns:1fr}
+}
