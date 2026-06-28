@@ -1668,3 +1668,18 @@
 @media(max-width:900px){
   .price-grid.game-variants,.variant-prices{grid-template-columns:1fr}
 }
+
+/* v159 web shell mobile overflow fix */
+.app-shell.web-shell{display:block;padding:0;overflow-x:hidden}
+.app-shell.web-shell .web-page{width:100%;max-width:100%;overflow-x:hidden}
+.app-shell.web-shell .web-section,
+.app-shell.web-shell .split,
+.app-shell.web-shell .split>*,
+.app-shell.web-shell .web-form,
+.app-shell.web-shell .feature-card,
+.app-shell.web-shell .reason-card,
+.app-shell.web-shell .audience,
+.app-shell.web-shell .info-card,
+.app-shell.web-shell .price-card{min-width:0}
+.app-shell.web-shell .web-form input,
+.app-shell.web-shell .web-form select{width:100%;max-width:100%;min-width:0}

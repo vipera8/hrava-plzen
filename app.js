@@ -210,6 +210,7 @@ function ptxt(s){
 }
 function render(){
   const path = currentRoute();
+  app.classList.toggle('web-shell', path==='/' || path==='/zasady-osobnich-udaju' || path==='/obchodni-podminky');
   if(path==='/hra/app') return renderGameApp();
   if(path==='/hra') return renderAccessGate();
   if(path==='/admin') return renderAdminEntry();
@@ -879,7 +880,7 @@ function completeStation(expectedStationId){
  if(!isFinal) returnToGame();
  app.querySelector('.phone')?.classList.add('wow');
  const next = isFinal ? null : station(s.currentStation);
- const successText = DATA.successMessages[Math.floor(Math.random()*DATA.successMessages.length)];
+ const successText = isFinal ? 'Finální slovo sedí.' : DATA.successMessages[Math.floor(Math.random()*DATA.successMessages.length)];
  const beer = BeerProgress({completedStops:s.completed.length,totalStops:DATA.stations.length,size:'large',animated:true,fromStops:previousDone});
  if(isFinal){
   modal(`<div class="success-card"><h2>${successText}</h2><p>Poslední zámek povolil. Půllitr je plný.</p><div class="success-progress">${beer}</div><button class="btn" onclick="closeModal(); returnToGame()">Zobrazit certifikát</button></div>`, false);
