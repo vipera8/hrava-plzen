@@ -1681,5 +1681,6 @@
 .app-shell.web-shell .audience,
 .app-shell.web-shell .info-card,
 .app-shell.web-shell .price-card{min-width:0}
-.app-shell.web-shell .web-form input,
+.app-shell.web-shell .web-form input:not([type="checkbox"]),
 .app-shell.web-shell .web-form select{width:100%;max-width:100%;min-width:0}
+.app-shell.web-shell .web-form input[type="checkbox"]{width:auto;max-width:none;min-width:0;flex:0 0 auto}
