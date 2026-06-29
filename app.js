@@ -775,7 +775,7 @@ function toggleAcc(btn){ btn.closest('.accordion').classList.toggle('open'); }
 let jingleAudio = null;
 function getJingleAudio(){
  const st=station(5);
- const file=st.jingle || '05_Velke_divadlo_JK_Tyla_audio_znelka.mp3';
+ const file=st.jingle || '05_Velke_divadlo_JK_Tyla_audio_znelka_cista.mp3';
  const src='assets/audio/'+encodeURI(file);
  if(!jingleAudio || jingleAudio.dataset.src !== src){
   if(jingleAudio) jingleAudio.pause();
